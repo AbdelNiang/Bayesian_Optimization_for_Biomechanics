@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Partie theorique - Optimisation du genou</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="/usr/share/javascript/mathjax/MathJax.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Partie theorique - Optimisation du genou</h1>
+</header>
+<h1 id="partie-theorique">Partie theorique</h1>
+<p>Ce document decrit ce qui est execute dans l’application:</p>
+<ol type="1">
+<li>simulation biomecanique parametrique;</li>
+<li>regularisation BV/TV (Chambolle) sur signaux 1D;</li>
+<li>simulation continue optionnelle via Neural ODE;</li>
+<li>optimisation bayesienne des parametres (GP + EI).</li>
+</ol>
+<h2 id="variables-et-bornes">1. Variables et bornes</h2>
+<p>Le vecteur de parametres est:</p>
+<p><span class="math display">\[
+x = [\theta_0,\; k,\; c,\; f]
+\]</span></p>
+<p>avec:</p>
+<ul>
+<li><span class="math inline">\(\theta_0\)</span>: angle initial;</li>
+<li><span class="math inline">\(k\)</span>: raideur ligamentaire;</li>
+<li><span class="math inline">\(c\)</span>: amortissement;</li>
+<li><span class="math inline">\(f\)</span>: frequence musculaire
+effective (Hz).</li>
+</ul>
+<p>Bornes utilisees:</p>
+<p><span class="math display">\[
+\theta_0\in[0.1,0.5],\quad
+k\in[5,20],\quad
+c\in[0.1,2],\quad
+f\in[1,5].
+\]</span></p>
+<h2 id="simulation-biomecanique-parametrique">2. Simulation biomecanique
+parametrique</h2>
+<p>Pour <span class="math inline">\(t_j\in[0,1]\)</span>, <span
+class="math inline">\(j=1,\dots,N\)</span>:</p>
+<p><span class="math display">\[
+stress_j = k\theta_0 + c\sin(2\pi f t_j).
+\]</span></p>
+<p>La douleur est definie autour d’un stress cible <span
+class="math inline">\(s^\star\)</span> (<span
+class="math inline">\(s^\star=3.0\)</span> dans le code):</p>
+<p><span class="math display">\[
+\Delta_j = |stress_j - s^\star|
+\]</span></p>
+<p><span class="math display">\[
+pain_j = 0.6\,\Delta_j + 0.4\,\exp(0.35\,\Delta_j).
+\]</span></p>
+<p>Objectif scalaire:</p>
+<p><span class="math display">\[
+\bar{p}(x)=\frac{1}{N}\sum_{j=1}^{N} pain_j.
+\]</span></p>
+<p>Penalisation douce de stabilite:</p>
+<p><span class="math display">\[
+R_{freq}(x)=0.02\,(f-2.5)^2.
+\]</span></p>
+<p>Penalisation BV/TV normalisee:</p>
+<p><span class="math display">\[
+TV(stress)=\sum_{j=1}^{N-1}|stress_{j+1}-stress_j|,
+\]</span></p>
+<p><span class="math display">\[
+R_{TV}(x)=\lambda_{TV}\,\frac{TV(stress)}{N-1}.
+\]</span></p>
+<p>Objectif optimise:</p>
+<p><span class="math display">\[
+f_{obj}(x)=\bar{p}(x)+R_{freq}(x)+R_{TV}(x),\qquad
+\min_{x\in\mathcal{X}} f_{obj}(x).
+\]</span></p>
+<h2 id="regularisation-tv-algorithme-de-chambolle">3. Regularisation TV
+(algorithme de Chambolle)</h2>
+<p>Sur un signal bruité <span
+class="math inline">\(y\in\mathbb{R}^N\)</span>, on estime <span
+class="math inline">\(u\)</span> via:</p>
+<p><span class="math display">\[
+\min_u \frac{1}{2}\|u-y\|_2^2 + \lambda\,TV(u).
+\]</span></p>
+<p>Version 1D (difference avant):</p>
+<p><span class="math display">\[
+(Du)_i=u_{i+1}-u_i,\quad TV(u)=\sum_i |(Du)_i|.
+\]</span></p>
+<p>L’algorithme dual de Chambolle met a jour <span
+class="math inline">\(p\)</span> puis reconstruit:</p>
+<p><span class="math display">\[
+u = y - \lambda D^\top p,
+\]</span></p>
+<p><span class="math display">\[
+p \leftarrow \frac{p + (\tau/\lambda)\,Du}{\max(1,\;|p +
+(\tau/\lambda)\,Du|)}.
+\]</span></p>
+<p>Dans l’application, cette brique est utilisee pour comparer:</p>
+<ul>
+<li>stress propre;</li>
+<li>stress bruité;</li>
+<li>stress denoise TV.</li>
+</ul>
+<p>Et mesurer la reduction de variation totale.</p>
+<h2 id="modele-continu-neural-ode">4. Modele continu (Neural ODE)</h2>
+<p>La section continue (si <code>torchdiffeq</code> est disponible)
+integre un etat:</p>
+<p><span class="math display">\[
+z(t)=[p(t),\,v(t),\,u(t)]
+\]</span></p>
+<p>ou <span class="math inline">\(p\)</span> est la position, <span
+class="math inline">\(v\)</span> la vitesse, <span
+class="math inline">\(u\)</span> une force effective.</p>
+<p>Le modele dynamique est:</p>
+<p><span class="math display">\[
+\dot{p}=v
+\]</span></p>
+<p><span class="math display">\[
+\dot{v}=\frac{-k_p p-c_p v+u}{m}+\delta_\phi(p,v,u)
+\]</span></p>
+<p><span class="math display">\[
+\dot{u}=g_\phi(p,v,u)
+\]</span></p>
+<p>avec:</p>
+<ul>
+<li><span class="math inline">\(m,k_p,c_p\)</span> parametres
+physiologiques apprenables;</li>
+<li><span class="math inline">\(\delta_\phi,g_\phi\)</span> corrections
+neurales (MLP).</li>
+</ul>
+<p>L’integration temporelle utilise <code>odeint</code> ou
+<code>odeint_adjoint</code>.</p>
+<h2 id="optimisation-bayesienne-gp-ei">5. Optimisation bayesienne (GP +
+EI)</h2>
+<h3 id="espace-normalise">5.1 Espace normalise</h3>
+<p>La BO est menee en espace unitaire:</p>
+<p><span class="math display">\[
+u\in[0,1]^4,\qquad x=l+u\odot(h-l).
+\]</span></p>
+<h3 id="surrogate-gp">5.2 Surrogate GP</h3>
+<p>On ajuste <code>SingleTaskGP</code> sur:</p>
+<ul>
+<li>entree: <span class="math inline">\(u_i\in[0,1]^4\)</span>;</li>
+<li>sortie normalisee:</li>
+</ul>
+<p><span class="math display">\[
+\tilde{y}_i=\frac{y_i-\mu_y}{\sigma_y}.
+\]</span></p>
+<h3 id="acquisition-ei">5.3 Acquisition EI</h3>
+<p>Le candidat est choisi par:</p>
+<p><span class="math display">\[
+u_{n+1}=\arg\max_{u\in[0,1]^4}EI(u),
+\]</span></p>
+<p>avec <code>maximize=False</code> et:</p>
+<p><span class="math display">\[
+best\_f=\min_i \tilde{y}_i.
+\]</span></p>
+<p>Puis:</p>
+<ol type="1">
+<li>conversion <span class="math inline">\(u_{n+1}\to
+x_{n+1}\)</span>;</li>
+<li>evaluation <span
+class="math inline">\(y_{n+1}=f_{obj}(x_{n+1})\)</span>;</li>
+<li>ajout au dataset.</li>
+</ol>
+<h3 id="selection-finale">5.4 Selection finale</h3>
+<p><span class="math display">\[
+x^\star=\arg\min_i y_i,\qquad
+best\_so\_far(n)=\min_{i\le n}y_i.
+\]</span></p>
+<h2 id="sorties-de-lapplication">6. Sorties de l’application</h2>
+<ul>
+<li>courbes <span class="math inline">\(stress(t)\)</span>, <span
+class="math inline">\(pain(t)\)</span> pour une simulation
+parametrique;</li>
+<li>module BV/TV: denoising de Chambolle + metriques TV;</li>
+<li>courbes continues <span
+class="math inline">\(p(t),v(t),\tau(t)\)</span> pour le Neural
+ODE;</li>
+<li>KPI (moyenne, max, integrale douleur, amplitude dynamique);</li>
+<li>historique BO et meilleur parametre <span
+class="math inline">\((\theta_0,k,c,f)\)</span>.</li>
+</ul>
+<h2 id="limites">7. Limites</h2>
+<ul>
+<li>modele phenomenologique non calibre patient-specifique;</li>
+<li>Neural ODE non entraine sur donnees cliniques dans cette
+version;</li>
+<li>BO mono-objectif sans contraintes cliniques explicites;</li>
+<li><span class="math inline">\(\lambda_{TV}\)</span> est un
+hyperparametre (pas encore estime depuis donnees reelles).</li>
+</ul>
+</body>
+</html>
