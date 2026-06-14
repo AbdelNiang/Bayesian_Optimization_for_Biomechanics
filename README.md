@@ -38,12 +38,6 @@ The objective function is assumed to be expensive and partially unknown.
 6. Update the model
 7. Repeat until convergence
 
-## Results
-
-- Optimal trajectory found after N iterations
-- Reduction of objective value by XX%
-- Improved balance between comfort and performance
-
 ## Future Work
 
 - Real biomechanical datasets
